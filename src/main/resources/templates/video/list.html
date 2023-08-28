@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/x-icon" href="/assets/image/billiard.png">
+    <link rel="stylesheet" href="/assets/bootstrap/v5.3.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/fontawesome/v5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="/assets/sweetalert2/v11.7.12/sweetalert2.min.css">
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <script src="/assets/bootstrap/v5.3.0/js/bootstrap.bundle.min.js"></script>
+    <title>List Video</title>
+    <!--    Ten thu muc/ ten file html :: ten fragment-->
+    <!--    head-css-->
+<!--    <th:block th:replace="layout/head :: head-1"/>-->
+    <!--    head-css-->
+
+</head>
+<body>
+<!-- Begin page -->
+<div id="wrapper">
+    <!--    header-->
+<!--    <th:block th:replace="layout/header"/>-->
+    <!--    header-->
+
+    <!--    left-side-->
+<!--    <th:block th:replace="layout/left"/>-->
+    <!--    left-side-->
+
+
+    <div class="content-page">
+        <div class="content">
+            <!--    page content-->
+            <div class="container-fluid">
+                <!-- start page title -->
+                <h1 class="text-center">List Video</h1>
+
+                <!-- end page title -->
+
+                <!--                Start row-->
+                <div class="row" id="page-content">
+
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body table-responsive">
+                                <div class="d-flex justify-content-between align-self-center">
+                                    <div>
+                                        <button class="btn btn-outline-primary m-3" id="btnShowCreateModal">
+                                            <i class="fas fa-plus"></i> New Video
+                                        </button>
+                                    </div>
+                                    <div class="m-3" style="height: 30px">
+                                        <form method="get" id="formSearch">
+                                            <div class="container-search d-flex">
+                                                <div class="d-flex "
+                                                     style="border: 1px solid lightgrey; border-radius: 5px">
+                                                    <input type="search" id="keySearch" name="keySearch"
+                                                           style="border: none" width="300px" class="form-control">
+                                                    <button type="button" class="btn btn-outline-success"
+                                                            style="border: none" id="searchbtn">
+                                                        <i class="fas fa-search"></i></button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+
+
+                                <div id="datatable-buttons_wrapper" class="dataTables_wrapper dt-bootstrap4 no-footer">
+                                    <div class="row">
+                                        <div class="col-sm-12">
+                                            <table class="table table-striped table-hover" >
+
+                                                <thead>
+                                                <tr role="row">
+                                                    <th>ID</th>
+                                                    <th>Title</th>
+                                                    <th>Description</th>
+                                                    <th>Play list</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                                </thead>
+
+                                                <tbody id="tbVideo">
+
+
+                                                </tbody>
+                                            </table>
+
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <!--                End row-->
+
+            </div>
+            <!--    page content-->
+        </div>
+    </div>
+
+    <!--    footer-->
+<!--    <th:block th:replace="layout/footer"/>-->
+    <!--    footer-->
+
+    <!--    footer-javaScript-->
+<!--    <th:block th:replace="layout/footer-js"/>-->
+    <!--    footer-javaScript-->
+</div>
+
+<th:block th:replace="video/modalCreate"/>
+<th:block th:replace="video/modalUpdate"/>
+
+
+<script src="/assets/js/jquery-3.6.0.min.js"></script>
+<script src="/assets/sweetalert2/v11.7.12/sweetalert2.all.min.js"></script>
+<script src="/assets/js/jquery.validate.min.js"></script>
+<script src="/assets/js/jquery.number.js"></script>
+<script src="/assets/js/app.js"></script>
+<script>
+
+    const page = {
+        url: {},
+        elements: {},
+        loadData: {},
+        commands: {},
+        dialogs: {
+            elements: {},
+            commands: {}
+        },
+        initializeControlEvent: {}
+    }
+    page.elements.tbVideo = $('#tbVideo');
+    page.elements.btnShowCreateModal = $('#btnShowCreateModal');
+    page.dialogs.elements.modalCreate = $('#modalCreate');
+    page.dialogs.elements.formCreate = $('#formCreate')
+    page.dialogs.elements.playlist = $('#playlist');
+    page.dialogs.elements.btnCreateVideo = $('#btnCreateVideo');
+
+    page.dialogs.elements.videoName = $('#videoName');
+    page.dialogs.elements.videoDescription = $('#videoDescription');
+    page.dialogs.elements.videoUrl = $('#videoUrl');
+
+
+    page.commands.renderVideo = (video) => {
+        const playlists = video.playlists;
+
+        const str = playlists.map(item => item.name).join(', ');
+
+        return `<tr id="tr_${video.id}">
+                    <td class="text-center">${video.id}</td>
+                    <td class="text-center">${video.title}</td>
+                    <td class="text-center">${video.description}</td>
+                    <td class="text-center">${str}</td>
+                    <td class="text-center">
+                        <button class="btn btn-outline-secondary btn-sm edit" data-id="${video.id}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button  class="btn btn-outline-danger btn-sm delete" data-id="${video.id}">
+                            <i class="fas fa-ban"></i>
+                        </button>
+                    </td>
+                </tr>`;
+    }
+    page.commands.renderPlaylist = (playlist) => {
+      return ` <input type="checkbox" name="tags" class="tags" id="playlist_${playlist.id}" value="${playlist.id}">
+            <label>${playlist.name}</label>`
+    }
+    page.commands.getAllPlaylist = () => {
+        return $.ajax({
+            type: 'GET',
+            url: "http://localhost:28001/api/videos/get-all-playlist",
+        })
+            .done((data) => {
+                page.dialogs.elements.playlist.empty()
+                const danhsach = `<label class="fw-bold">Danh sách</label><br>`;
+                page.dialogs.elements.playlist.append(danhsach);
+                data.forEach((item) => {
+                    const str = page.commands.renderPlaylist(item);
+                    page.dialogs.elements.playlist.append(str);
+                });
+            })
+            .fail((error) => {
+                console.log(error);
+            })
+    }
+    page.commands.getAllVideo = () => {
+        $.ajax({
+            type: 'GET',
+            url: "http://localhost:28001/api/videos",
+        })
+            .done((data) => {
+                data.forEach((item) => {
+                    const str = page.commands.renderVideo(item);
+                    page.elements.tbVideo.prepend(str);
+                });
+            })
+            .fail((error) => {
+                console.log(error);
+            })
+    }
+    page.commands.getVideoById = (videoId) => {
+        $.ajax({
+            type: 'GET',
+            url: "http://localhost:28001/api/videos/" + videoId,
+        })
+            .done((data) => {
+                data.forEach((item) => {
+                    const str = page.commands.renderVideo(item);
+                    page.elements.tbVideo.prepend(str);
+                });
+            })
+            .fail((error) => {
+                console.log(error);
+            })
+    }
+    page.commands.deleteVideo = (videoId) => {
+        App.showDeleteConfirmDialog().then((rs) => {
+            if (rs.isConfirmed) {
+                $.ajax({
+                    headers: {
+                        'accept': 'application/json',
+                        'content-type': 'application/json'
+                    },
+                    type: 'DELETE',
+                    url: 'http://localhost:28001/api/videos/' + videoId
+                })
+                    .done(() => {
+                        $(`#tr_${videoId}`).remove();
+
+                        App.showSuccessAlert("Xoá thành công")
+                    })
+                    .fail((error) => {
+                        console.log(error);
+                    });
+            }
+        })
+    }
+    page.commands.create = () => {
+        const title = page.dialogs.elements.videoName.val();
+        const description = page.dialogs.elements.videoDescription.val();
+        const url = page.dialogs.elements.videoUrl.val();
+        const playlistId = [];
+        for (let i = 0; i < $(".tags:checked").length; i++) {
+            playlistId.push(+$(".tags:checked")[i].value);
+        }
+        const obj = {
+            title: title,
+            description: description,
+            url: url,
+            playlistId: playlistId
+        }
+        $.ajax({
+            headers: {
+                'accept': 'application/json',
+                'content-type': 'application/json'
+            },
+            type: 'POST',
+            url: "http://localhost:28001/api/videos",
+            data: JSON.stringify(obj)
+
+        })
+            .done((data) => {
+                const str = page.commands.renderVideo(data);
+                page.elements.tbVideo.prepend(str);
+
+                page.dialogs.elements.modalCreate.modal("hide");
+
+                App.showSuccessAlert('Thêm video thành công');
+            })
+            .fail((error) => {
+                console.log(error);
+            })
+    }
+
+    page.commands.showModalUpdate = () => {
+
+    }
+    page.initializeControlEvent = () => {
+        page.elements.btnShowCreateModal.on('click', function () {
+            page.dialogs.elements.modalCreate.modal("show");
+            page.commands.getAllPlaylist();
+        })
+        page.dialogs.elements.btnCreateVideo.on('click', () => {
+            // page.dialogs.elements.formCreate.trigger("submit");
+            page.commands.create()
+        })
+        page.elements.tbVideo.on('click', '.delete', function () {
+            const videoId = +$(this).data('id');
+            page.commands.deleteVideo(videoId)
+        })
+        page.elements.tbVideo.on('click', '.edit', function () {
+            const videoId = +$(this).data('id');
+            page.commands.showModalUpdate(videoId)
+        })
+    }
+
+    $(() => {
+        page.commands.getAllVideo ()
+
+        page.initializeControlEvent();
+    })
+
+
+</script>
+</body>
+</html>
